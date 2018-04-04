@@ -1,0 +1,33 @@
+{
+  "name": "log.nfeld.com",
+  "version": "0.1.0",
+  "author": "Nikolay Feldman<niko@nfeld.com>",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:codeniko/log.nfeld.com.git"
+  },
+  "private": true,
+  "scripts": {
+    "build": "netlify-lambda build src",
+    "serve": "netlify-lambda serve src",
+    "clean": "rm -rf ./npm-debug.log ./build"
+  },
+  "dependencies": {
+    "config": "^1.30.0",
+    "querystring": "^0.2.0",
+    "uuid": "^3.2.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.0.0-beta.44",
+    "netlify-lambda": "^1.0.0-babel-7-beta",
+    "request": "^2.85.0"
+  },
+  "proxy": {
+    "/.netlify/functions": {
+      "target": "http://localhost:9000",
+      "pathRewrite": {
+        "^/\\.netlify/functions": ""
+      }
+    }
+  }
+}

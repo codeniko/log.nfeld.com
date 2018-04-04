@@ -1,0 +1,8 @@
+[build]
+  Command = "npm run build"
+  Functions = "build"
+  Publish = "build"
+
+[[redirects]]
+  from = "/v1/beacon"
+  to = "/.netlify/functions/beacon"
