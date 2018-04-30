@@ -21,13 +21,37 @@ function whitelistDomain(domain, addWww = true) {
 }
 
 
-// https://developers.google.com/analytics/devguides/collection/protocol/v1/devguide
+/* https://developers.google.com/analytics/devguides/collection/protocol/v1/devguide
+v: 1
+_v: j67
+a: 751874410
+t: pageview
+_s: 1
+dl: https://nfeld.com/about.html
+dr: https://google.com
+ul: en-us
+de: UTF-8
+dt: Nikolay Feldman - Software Engineer
+sd: 24-bit
+sr: 1440x900
+vp: 945x777
+je: 0
+_u: blabla~
+jid: 
+gjid: 
+cid: 1837873423.1522911810
+tid: UA-116530991-1
+_gid: 1828045325.1524815793
+gtm: u4d
+z: 1379041260
+*/
+
 function proxyToGoogleAnalytics(event, done) {
   const params = event.queryStringParameters
   const headers = event.headers || {}
   params.ua = headers['user-agent'] || '' // user agent override
   params.uip = headers['x-forwarded-for'] || headers['x-bb-ip'] || '' // ip override
-  params.cid = params.cid || uuidv4() // use given cid, or generate a new one
+  params.cid = params.cid || uuidv4() // use given cid, or generate a new one as last resort. Generating should be avoided because the one user will show up in GA multiple times. If user refresh page `n` times, you'll get `n` pageviews logged into GA from "different" users. Client should generate a uuid and store in cookies, local storage, or generate a fingerprint
 
   console.info('Query params:', params)
   const qs = querystring.stringify(params)
