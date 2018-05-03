@@ -1,5 +1,6 @@
 const request = require('request')
 
+/*
 function promisedRequest(options) {
   return new Promise((resolve, reject) => {
     request(options, (error, response) => {
@@ -11,9 +12,11 @@ function promisedRequest(options) {
     })
   })
 }
+*/
 
 const originWhitelist = [] // keep this empty and append domains to whitelist using whiteListDomain()
 whitelistDomain('nfeld.com')
+whitelistDomain('jessicalchang.com')
 
 const domainTagMap = {
   'nfeld.com': 'testnfeld',
@@ -30,16 +33,15 @@ function whitelistDomain(domain, addWww = true) {
     'http://',
   ]
   if (addWww) {
-    prefixes.push('https://www')
-    prefixes.push('http://www')
+    prefixes.push('https://www.')
+    prefixes.push('http://www.')
   }
   prefixes.forEach(prefix => originWhitelist.push(prefix + domain))
 }
 
-
-function beacon(event, context, callback, headers) {
+function track(event, done) {
   const { domain } = event.queryStringParameters
-  console.info('POST payload:', event.body)
+  console.info('tracker payload:', event.body)
 
   const reqOptions = {
     method: 'POST',
@@ -51,46 +53,45 @@ function beacon(event, context, callback, headers) {
     body: JSON.parse(event.body),
   }
 
-  return promisedRequest(reqOptions)
-    .then(result => {
-      console.info('result from loggly:', result.body)
-      callback(null, {
-        statusCode: 200,
-        headers,
-        body: '{"success":true}'
-      })
-    })
+  request(reqOptions, (error, result) => {
+    if (error) {
+      console.info('loggly error!', error)
+    } else {
+      console.info('result from loggly:', result.statusCode, result.statusMessage)
+    }
+  })
+
+  done()
 }
 
 
 exports.handler = function(event, context, callback) {
-  console.log('event obj', event)
-  console.log('context obj', context)
   const origin = event.headers['origin'] || event.headers['Origin'] || ''
   console.log(`Received ${event.httpMethod} request from, origin: ${origin}`)
 
   const isOriginWhitelisted = originWhitelist.indexOf(origin) >= 0
+  console.info('is whitelisted?', isOriginWhitelisted)
 
   const headers = {
-    'Access-Control-Allow-Origin': isOriginWhitelisted ? origin : originWhitelist[0],
-    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+    //'Access-Control-Allow-Origin': isOriginWhitelisted ? origin : originWhitelist[0],
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type,Accept',
   }
 
-  if (event.httpMethod === 'OPTIONS') {
+  const done = () => {
     callback(null, {
       statusCode: 200,
       headers,
       body: '',
     })
+  }
+
+  if (event.httpMethod === 'OPTIONS') {
+    done()
   } else if (event.httpMethod !== 'POST') {
-    callback({error: 'Not found'})
+    callback('Not found')
   } else {
-    headers['Content-Type'] = 'application/json'
-    return beacon(event, context, callback, headers)
-      .catch((error) => {
-        console.log({error})
-        callback({error})
-      })
+    track(event, done)
   }
 }

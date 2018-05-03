@@ -100,7 +100,7 @@ exports.handler = function(event, context, callback) {
   if (event.httpMethod === 'OPTIONS') {
     done()
   } else if (event.httpMethod !== 'GET') {
-    callback({error: 'Not found'})
+    callback('Not found')
   } else {
     proxyToGoogleAnalytics(event, done)
   }
