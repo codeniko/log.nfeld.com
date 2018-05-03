@@ -4,22 +4,21 @@ const uuidv4 = require('uuid/v4')
 
 const GA_ENDPOINT = `https://www.google-analytics.com/collect`
 
-const originWhitelist = [] // keep this empty and append domains to whitelist using whiteListDomain()
-whitelistDomain('nfeld.com')
-whitelistDomain('jessicalchang.com')
-
 function whitelistDomain(domain, addWww = true) {
   const prefixes = [
     'https://',
     'http://',
   ]
   if (addWww) {
-    prefixes.push('https://www')
-    prefixes.push('http://www')
+    prefixes.push('https://www.')
+    prefixes.push('http://www.')
   }
   prefixes.forEach(prefix => originWhitelist.push(prefix + domain))
 }
 
+const originWhitelist = [] // keep this empty and append domains to whitelist using whiteListDomain()
+whitelistDomain('nfeld.com')
+whitelistDomain('jessicalchang.com')
 
 /* https://developers.google.com/analytics/devguides/collection/protocol/v1/devguide
 v: 1
@@ -82,6 +81,7 @@ exports.handler = function(event, context, callback) {
   console.log(`Received ${event.httpMethod} request from, origin: ${origin}`)
 
   const isOriginWhitelisted = originWhitelist.indexOf(origin) >= 0
+  console.info('is whitelisted?', isOriginWhitelisted)
 
   const headers = {
     'Access-Control-Allow-Origin': isOriginWhitelisted ? origin : originWhitelist[0],
