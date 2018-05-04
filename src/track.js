@@ -1,25 +1,11 @@
 const request = require('request')
 
-/*
-function promisedRequest(options) {
-  return new Promise((resolve, reject) => {
-    request(options, (error, response) => {
-      if (error) {
-        reject(error)
-      } else {
-        resolve(response)
-      }
-    })
-  })
-}
-*/
-
 const originWhitelist = [] // keep this empty and append domains to whitelist using whiteListDomain()
 whitelistDomain('nfeld.com')
 whitelistDomain('jessicalchang.com')
 
 const domainTagMap = {
-  'nfeld.com': 'testnfeld',
+  'nfeld.com': 'nfeld.com',
   'jessicalchang.com': 'testjessica',
 }
 
@@ -41,7 +27,16 @@ function whitelistDomain(domain, addWww = true) {
 
 function track(event, done) {
   const { domain } = event.queryStringParameters
+  const trackerData = JSON.parse(event.body)
+  const headers = event.headers || {}
+  const ip = headers['x-forwarded-for'] || headers['x-bb-ip'] || ''
   console.info('tracker payload:', event.body)
+  console.info('ip:', ip)
+
+  // attach ip to context
+  if (trackerData && trackerData.context) {
+    trackerData.context.ip = ip
+  }
 
   const reqOptions = {
     method: 'POST',
@@ -50,7 +45,7 @@ function track(event, done) {
     },
     json: true,
     url: logEndpoint(domainTagMap[domain]),
-    body: JSON.parse(event.body),
+    body: trackerData,
   }
 
   request(reqOptions, (error, result) => {
@@ -73,8 +68,7 @@ exports.handler = function(event, context, callback) {
   console.info('is whitelisted?', isOriginWhitelisted)
 
   const headers = {
-    //'Access-Control-Allow-Origin': isOriginWhitelisted ? origin : originWhitelist[0],
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': isOriginWhitelisted ? origin : originWhitelist[0],
     'Access-Control-Allow-Methods': 'POST,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type,Accept',
   }
