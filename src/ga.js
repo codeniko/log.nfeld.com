@@ -46,11 +46,14 @@ z: 1379041260
 */
 
 function proxyToGoogleAnalytics(event, done) {
-  const params = event.queryStringParameters
+  // get GA params whether GET or POST request
+  const params = event.httpMethod.toUpperCase() === 'GET' ? event.queryStringParameters : JSON.parse(event.body)
   const headers = event.headers || {}
-  params.ua = headers['user-agent'] || '' // user agent override
+
+  // attach other GA params, required for IP address. UA and CID can be sent from client
   params.uip = headers['x-forwarded-for'] || headers['x-bb-ip'] || '' // ip override
-  params.cid = params.cid || uuidv4() // use given cid, or generate a new one as last resort. Generating should be avoided because the one user will show up in GA multiple times. If user refresh page `n` times, you'll get `n` pageviews logged into GA from "different" users. Client should generate a uuid and store in cookies, local storage, or generate a fingerprint
+  params.ua = params.ua || headers['user-agent'] || '' // user agent override
+  params.cid = params.cid || uuidv4() // REQUIRED: use given cid, or generate a new one as last resort. Generating should be avoided because the one user will show up in GA multiple times. If user refresh page `n` times, you'll get `n` pageviews logged into GA from "different" users. Client should generate a uuid and store in cookies, local storage, or generate a fingerprint
 
   console.info('Query params:', params)
   const qs = querystring.stringify(params)
@@ -75,7 +78,6 @@ function proxyToGoogleAnalytics(event, done) {
   done()
 }
 
-
 exports.handler = function(event, context, callback) {
   const origin = event.headers['origin'] || event.headers['Origin'] || ''
   console.log(`Received ${event.httpMethod} request from, origin: ${origin}`)
@@ -85,7 +87,7 @@ exports.handler = function(event, context, callback) {
 
   const headers = {
     'Access-Control-Allow-Origin': isOriginWhitelisted ? origin : originWhitelist[0],
-    'Access-Control-Allow-Methods': 'GET,OPTIONS',
+    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type,Accept',
   }
 
@@ -97,11 +99,13 @@ exports.handler = function(event, context, callback) {
     })
   }
 
+  const httpMethod = event.httpMethod.toUpperCase()
+
   if (event.httpMethod === 'OPTIONS') {
     done()
-  } else if (event.httpMethod !== 'GET') {
-    callback('Not found')
-  } else {
+  } else if (httpMethod === 'GET' || httpMethod === 'POST') {
     proxyToGoogleAnalytics(event, done)
+  } else {
+    callback('Not found')
   }
 }
