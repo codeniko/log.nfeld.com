@@ -83,7 +83,7 @@ exports.handler = function(event, context, callback) {
 
   if (event.httpMethod === 'OPTIONS') {
     done()
-  } else if (event.httpMethod !== 'POST') {
+  } else if (event.httpMethod !== 'POST' || !isOriginWhitelisted) {
     callback('Not found')
   } else {
     track(event, done)
